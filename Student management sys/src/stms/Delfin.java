@@ -1,11 +1,10 @@
 package stms;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Scanner;
+import java.io.*;
+import java.util.*;
 
 public class Delfin {
+    // Method to input student records
     public static void input() {
         Scanner scanner = new Scanner(System.in);
         String csvFile = "src\\StudentInfo.csv"; 
@@ -28,7 +27,7 @@ public class Delfin {
         try (FileWriter writer = new FileWriter(csvFile, true)) { // Open in append mode
             // Write the header only if the file is new or empty
             if (isNewFile) {
-                writer.append("Name,Age,Gender,Birthday,LRN,Guardian,Address");
+                writer.append("Name,Age,Gender,Birthday,LRN,Guardian,Contact,Address\n");
             }
 
             // Collect user input and write to CSV
@@ -39,26 +38,31 @@ public class Delfin {
                 System.out.println("Enter age:");
                 int age = scanner.nextInt();
                 scanner.nextLine(); // Consume the newline character
-                
-                System.out.println("Enter Gender:");
+
+                System.out.println("Enter gender:");
                 String gender = scanner.nextLine();
 
-                System.out.println("Enter Birthday:");
+                System.out.println("Enter birthday:");
                 String bday = scanner.nextLine();
-                
-                System.out.println("Enter LRN:");
-                int LRN = scanner.nextInt();
-                scanner.nextLine(); // Consume the newline character
-                
-                System.out.println("Enter Parent name:");
+
+                String lrn;
+                do {
+                    System.out.println("Enter LRN (12 digits):");
+                    lrn = scanner.nextLine();
+                    if (lrn.length() != 12 || !lrn.matches("\\d{12}")) {
+                        System.out.println("Invalid LRN. It must be exactly 12 digits.");
+                    }
+                } while (lrn.length() != 12 || !lrn.matches("\\d{12}"));
+
+                System.out.println("Enter parent name:");
                 String pn = scanner.nextLine();
-                
-                System.out.println("Enter Parent Contact number:");
-                String pc = scanner.nextLine(); // Read the full contact number
-                
+
+                System.out.println("Enter parent contact number:");
+                String pc = scanner.nextLine();
+
                 System.out.println("Enter address:");
-                String address = scanner.nextLine(); // Use nextLine for address
-                
+                String address = scanner.nextLine();
+
                 // Write the data to the CSV file
                 writer.append(name)
                       .append(",")
@@ -68,7 +72,7 @@ public class Delfin {
                       .append(",")
                       .append(bday)
                       .append(",")
-                      .append(String.valueOf(LRN))
+                      .append(lrn)
                       .append(",")
                       .append(pn)
                       .append(",")
@@ -81,8 +85,62 @@ public class Delfin {
             System.out.println("Data has been written to " + csvFile);
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            
+        }
+    }
+
+    // Method to remove a student record by name (case-insensitive)
+    public static void remove(String nameToRemove) {
+        String csvFile = "src\\StudentInfo.csv";
+        File inputFile = new File(csvFile);
+        File tempFile = new File("temp.csv");
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
+             BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
+
+            String currentLine;
+            boolean headerWritten = false;
+            boolean recordFound = false;
+
+            while ((currentLine = reader.readLine()) != null) {
+                // Write the header to the temp file if it's the first line
+                if (!headerWritten) {
+                    writer.write(currentLine);
+                    writer.newLine();
+                    headerWritten = true;
+                    continue;
+                }
+
+                // Split the line into fields
+                String[] fields = currentLine.split(",");
+
+                // Check if the name matches the one to remove (case-insensitive)
+                if (fields[0].equalsIgnoreCase(nameToRemove)) {
+                    recordFound = true; // Mark the record as found
+                    continue; // Skip writing this line to the temp file
+                }
+
+                // Write the line to the temp file if it's not a match
+                writer.write(currentLine);
+                writer.newLine();
+            }
+
+            if (!inputFile.delete()) {
+                System.out.println("Could not delete the original file");
+                return;
+            }
+            if (!tempFile.renameTo(inputFile)) {
+                System.out.println("Could not rename the temp file");
+                return;
+            }
+
+            if (recordFound) {
+                System.out.println("Record removed successfully.");
+            } else {
+                System.out.println("Record not found.");
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
